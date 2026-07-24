@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>AMS 训练监控台</title>
+<style>
+  :root{
+    --bg:#0F1214;
+    --surface:#181C1F;
+    --surface-2:#20262A;
+    --line:#2A3136;
+    --text:#E7EAEC;
+    --text-dim:#8B959B;
+    --text-faint:#5C6469;
+    --accent:#4CC9B0;
+    --accent-dim:#2E5F55;
+    --warn:#E0A93E;
+    --danger:#D9634A;
+    --mono: 'SF Mono', 'JetBrains Mono', Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  #ams-root{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    padding:0;
+    min-height:600px;
+    border-radius:10px;
+    overflow:hidden;
+  }
+  .ams-header{
+    padding:20px 24px 16px;
+    border-bottom:1px solid var(--line);
+  }
+  .ams-eyebrow{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.14em;
+    color:var(--accent);
+    text-transform:uppercase;
+  }
+  .ams-title{
+    font-size:20px;
+    font-weight:600;
+    margin-top:4px;
+    letter-spacing:-.01em;
+  }
+  .ams-tabs{
+    display:flex;
+    gap:2px;
+    padding:0 24px;
+    border-bottom:1px solid var(--line);
+    background:var(--surface);
+    overflow-x:auto;
+  }
+  .ams-tab{
+    padding:12px 16px;
+    font-size:13px;
+    color:var(--text-dim);
+    cursor:pointer;
+    border:none;
+    border-bottom:2px solid transparent;
+    border-radius:0;
+    white-space:nowrap;
+    font-family:var(--mono);
+    background:transparent;
+    touch-action:manipulation;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+    -webkit-user-select:none;
+    outline:none;
+  }
+  .ams-tab:active{opacity:.7;}
+  .ams-tab.active{
+    color:var(--text);
+    border-bottom-color:var(--accent);
+  }
+  .ams-body{
+    padding:20px 24px 28px;
+  }
+  .ams-panel{display:none;}
+  .ams-panel.active{display:block;}
+  .ams-card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:16px 18px;
+    margin-bottom:14px;
+  }
+  .ams-card-title{
+    font-size:12px;
+    color:var(--text-dim);
+    font-family:var(--mono);
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    margin-bottom:12px;
+  }
+  .ams-row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:10px;
+  }
+  .ams-field{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    flex:1;
+    min-width:100px;
+  }
+  .ams-field label{
+    font-size:11px;
+    color:var(--text-faint);
+  }
+  .ams-field input, .ams-field select{
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    color:var(--text);
+    padding:7px 8px;
+    border-radius:5px;
+    font-size:13px;
+    font-family:var(--sans);
+  }
+  .ams-field input:focus, .ams-field select:focus{
+    outline:none;
+    border-color:var(--accent-dim);
+  }
+  .ams-btn{
+    background:var(--accent);
+    color:#08201B;
+    border:none;
+    padding:8px 16px;
+    border-radius:5px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    align-self:flex-end;
+  }
+  .ams-btn:hover{filter:brightness(1.08);}
+  .ams-btn.secondary{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--text-dim);
+    font-weight:400;
+  }
+  .ams-btn.danger-outline{
+    background:transparent;
+    border:1px solid var(--danger);
+    color:var(--danger);
+    font-weight:400;
+    padding:5px 10px;
+    font-size:12px;
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:12.5px;
+  }
+  th{
+    text-align:left;
+    color:var(--text-faint);
+    font-weight:500;
+    font-family:var(--mono);
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    padding:6px 8px;
+    border-bottom:1px solid var(--line);
+  }
+  td{
+    padding:7px 8px;
+    border-bottom:1px solid #1E2427;
+    font-family:var(--mono);
+  }
+  tr:hover td{background:#1A2023;}
+  .tag{
+    display:inline-block;
+    padding:2px 7px;
+    border-radius:10px;
+    font-size:10.5px;
+    font-family:var(--mono);
+  }
+  .tag-main{background:#1F3A34; color:var(--accent);}
+  .tag-assist{background:#2E2A1A; color:var(--warn);}
+  .tag-maint{background:#22262E; color:#7A93B0;}
+  .bar-wrap{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:10px;
+  }
+  .bar-label{
+    width:110px;
+    font-size:12px;
+    color:var(--text-dim);
+    font-family:var(--mono);
+    flex-shrink:0;
+  }
+  .bar-track{
+    flex:1;
+    height:20px;
+    background:var(--surface-2);
+    border-radius:4px;
+    position:relative;
+    overflow:hidden;
+  }
+  .bar-fill{
+    height:100%;
+    border-radius:4px;
+  }
+  .bar-target-line{
+    position:absolute;
+    top:-3px; bottom:-3px;
+    width:2px;
+    background:var(--text);
+    opacity:.5;
+  }
+  .bar-value{
+    width:130px;
+    font-size:12px;
+    font-family:var(--mono);
+    text-align:right;
+    flex-shrink:0;
+  }
+  .flag-ok{color:var(--accent);}
+  .flag-warn{color:var(--warn);}
+  .empty-state{
+    color:var(--text-faint);
+    font-size:13px;
+    padding:20px 0;
+    text-align:center;
+  }
+  .kpi-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+    gap:12px;
+  }
+  .kpi-box{
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:12px 14px;
+  }
+  .kpi-name{font-size:12px; color:var(--text-dim); margin-bottom:6px;}
+  .kpi-num{font-size:20px; font-family:var(--mono); font-weight:600;}
+  .kpi-sub{font-size:11px; margin-top:4px; font-family:var(--mono);}
+  .note{
+    font-size:12px;
+    color:var(--text-faint);
+    line-height:1.6;
+    margin-top:8px;
+  }
+  svg text{font-family:var(--mono);}
+  select.lift-select{min-width:130px;}
+  .checklist-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 0;
+    border-bottom:1px solid #1E2427;
+    font-size:13px;
+  }
+  .checklist-item:last-child{border-bottom:none;}
+  .status-pill{
+    font-family:var(--mono);
+    font-size:11px;
+    padding:3px 9px;
+    border-radius:10px;
+  }
+  .pill-pass{background:#1F3A2F; color:#5FD98A;}
+  .pill-fail{background:#3A231F; color:var(--danger);}
+  .pill-pending{background:#2A2E32; color:var(--text-faint);}
+  ::-webkit-scrollbar{height:6px; width:6px;}
+  ::-webkit-scrollbar-thumb{background:var(--line); border-radius:3px;}
+
+  /* ---- training mode ---- */
+  .train-row{
+    display:flex;
+    align-items:flex-start;
+    gap:6px;
+    padding:6px 0;
+    border-bottom:1px solid #1E2427;
+  }
+  .train-row:last-child{border-bottom:none;}
+  .train-row.done-all .train-exercise{text-decoration:line-through; opacity:.45;}
+  .train-exercise{flex:1; font-size:12.5px; line-height:1.5; word-break:break-all;}
+  .train-sets{display:flex; gap:5px; flex-wrap:wrap; flex-shrink:0; align-items:center;}
+  .train-circle{
+    width:30px; height:30px; border-radius:50%;
+    border:2px solid var(--line);
+    background:transparent;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; color:transparent;
+    transition: all .15s;
+    touch-action:manipulation;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none; -webkit-user-select:none;
+    outline:none;
+    padding:0;
+    flex-shrink:0;
+  }
+  .train-circle:active{transform:scale(.9);}
+  .train-circle.checked{
+    border-color:var(--accent);
+    background:var(--accent);
+    color:#08201B;
+  }
+  .train-circle.half{
+    border-color:var(--warn);
+    background:transparent;
+    color:var(--warn);
+  }
+  .train-mode-toggle{
+    margin-bottom:10px;
+  }
+  .train-summary{
+    font-size:12px; color:var(--text-dim); margin-bottom:10px;
+    font-family:var(--mono);
+  }
+</style>
+
+<div id="ams-root">
+  <div class="ams-header">
+    <div class="ams-eyebrow">Personal Athlete Monitoring — M2 强度周期</div>
+    <div class="ams-title">训练负荷 / VBT基线 / 退出条件监控台</div>
+  </div>
+  <div class="ams-tabs" id="ams-tabs">
+    <button class="ams-tab active" data-tab="plan" onclick="AMS.switchTab('plan')">训练计划</button>
+    <button class="ams-tab" data-tab="log" onclick="AMS.switchTab('log')">训练记录</button>
+    <button class="ams-tab" data-tab="week" onclick="AMS.switchTab('week')">周汇总</button>
+    <button class="ams-tab" data-tab="vbt" onclick="AMS.switchTab('vbt')">VBT基线</button>
+    <button class="ams-tab" data-tab="jump" onclick="AMS.switchTab('jump')">跳跃 &amp; 退出条件</button>
+  </div>
+  <div class="ams-body">
+
+    <!-- ===== TAB 0: 训练计划 ===== -->
+    <div class="ams-panel active" id="panel-plan">
+      <div class="ams-card">
+        <div class="ams-row">
+          <div class="ams-field" style="max-width:200px;">
+            <label>选择周期</label>
+            <select id="plan-week-select" onchange="AMS.renderPlanDay()"></select>
+          </div>
+          <button class="ams-btn secondary" onclick="AMS.newWeek()">新建周期</button>
+          <button class="ams-btn danger-outline" style="align-self:flex-end;" onclick="AMS.deleteWeek()">删除此周期</button>
+        </div>
+        <div class="ams-row" id="plan-day-tabs"></div>
+      </div>
+      <div class="ams-card">
+        <div class="ams-card-title" id="plan-day-title">—</div>
+        <div id="plan-day-body"></div>
+        <div class="ams-row" style="margin-top:10px;">
+          <button class="ams-btn" onclick="AMS.savePlanDay()">保存本日修改</button>
+        </div>
+        <div class="note">每类下按一行一个动作填写，格式建议「动作名称 - 组数×次数/强度说明」，不强制格式，纯文本即可。点每个分类下的"填入训练记录"，会把这个模块自动带到训练记录表单，你只需要补时长和RPE再提交。</div>
+      </div>
+    </div>
+
+    <!-- ===== TAB 1: 训练记录 ===== -->
+    <div class="ams-panel" id="panel-log">
+      <div class="ams-card">
+        <div class="ams-card-title">新增一条模块记录（block-RPE）</div>
+        <div class="ams-row">
+          <div class="ams-field">
+            <label>日期</label>
+            <input type="date" id="log-date">
+          </div>
+          <div class="ams-field">
+            <label>周期标签 (如 W5-D1)</label>
+            <input type="text" id="log-day" placeholder="W5-D1">
+          </div>
+          <div class="ams-field">
+            <label>资源分类</label>
+            <select id="log-cat">
+              <option value="主项">主项 (最大力量目标)</option>
+              <option value="辅助">辅助 (肌肥大/维持)</option>
+              <option value="维持">维持 (有氧/弹跳/加速)</option>
+            </select>
+          </div>
+        </div>
+        <div class="ams-row">
+          <div class="ams-field">
+            <label>模块内容（动作/说明）</label>
+            <input type="text" id="log-desc" placeholder="如：高翻+后蹲">
+          </div>
+          <div class="ams-field" style="max-width:110px;">
+            <label>时长(分钟)</label>
+            <input type="number" id="log-dur" placeholder="35">
+          </div>
+          <div class="ams-field" style="max-width:110px;">
+            <label>块RPE (0-10)</label>
+            <input type="number" id="log-rpe" step="0.5" placeholder="7">
+          </div>
+          <div class="ams-field" style="max-width:110px;">
+            <label>疼痛VAS (0-10)</label>
+            <input type="number" id="log-pain" placeholder="0">
+          </div>
+          <button class="ams-btn" onclick="AMS.addLog()">添加</button>
+        </div>
+        <div class="note">同一天多个模块分开记录（如D1的"主项块"和"辅助块"各记一条），课后15-30分钟再打分，避免最后一组局部疲劳影响整体判断。负荷 = RPE × 时长。</div>
+      </div>
+
+      <div class="ams-card">
+        <div class="ams-card-title">全部记录</div>
+        <div id="log-table-wrap"><div class="empty-state">还没有记录，从上面添加第一条</div></div>
+      </div>
+    </div>
+
+    <!-- ===== TAB 2: 周汇总 ===== -->
+    <div class="ams-panel" id="panel-week">
+      <div class="ams-card">
+        <div class="ams-card-title">选择周（周一为起点）</div>
+        <div class="ams-row">
+          <div class="ams-field" style="max-width:200px;">
+            <label>该周内任意一天日期</label>
+            <input type="date" id="week-pick" onchange="AMS.renderWeek()">
+          </div>
+        </div>
+      </div>
+      <div class="ams-card">
+        <div class="ams-card-title">资源占比 vs 目标 (主要50% / 辅助25% / 维持25%)</div>
+        <div id="week-bars"><div class="empty-state">选择一周查看汇总</div></div>
+      </div>
+      <div class="ams-card">
+        <div class="ams-card-title">当周疼痛峰值 &amp; 备注</div>
+        <div id="week-pain"><div class="empty-state">—</div></div>
+      </div>
+    </div>
+
+    <!-- ===== TAB 3: VBT基线 ===== -->
+    <div class="ams-panel" id="panel-vbt">
+      <div class="ams-card">
+        <div class="ams-row">
+          <div class="ams-field" style="max-width:160px;">
+            <label>选择动作</label>
+            <select id="vbt-lift" class="lift-select" onchange="AMS.renderVBT()">
+              <option value="深蹲">深蹲</option>
+              <option value="硬拉">硬拉</option>
+              <option value="实力推">实力推</option>
+              <option value="引体">引体</option>
+              <option value="高翻">高翻</option>
+            </select>
+          </div>
+          <div class="ams-field" style="max-width:160px;">
+            <label>MVT 最小速度阈值(m/s)</label>
+            <input type="number" step="0.01" id="vbt-mvt" placeholder="如 0.20" onchange="AMS.saveMVT()">
+          </div>
+        </div>
+        <div class="note">MVT需要用你自己的数据校准，不要套通用经验值。方法：连续几次训练在接近力竭的一组记录"完成"和"失败"临界处的速度，取多次的平均值作为你个人的MVT。刚开始测试阶段可以先留空，先只看负荷-速度散点和回归线的形状。</div>
+      </div>
+
+      <div class="ams-card">
+        <div class="ams-card-title">添加一个负荷-速度数据点</div>
+        <div class="ams-row">
+          <div class="ams-field">
+            <label>日期</label>
+            <input type="date" id="vbt-date">
+          </div>
+          <div class="ams-field">
+            <label>负荷 (kg)</label>
+            <input type="number" step="0.5" id="vbt-load">
+          </div>
+          <div class="ams-field">
+            <label>该组最佳代表速度 (m/s)</label>
+            <input type="number" step="0.01" id="vbt-vel">
+          </div>
+          <div class="ams-field">
+            <label>备注</label>
+            <input type="text" id="vbt-note" placeholder="如：技术良好/该组作废">
+          </div>
+          <button class="ams-btn" onclick="AMS.addVBT()">添加</button>
+        </div>
+      </div>
+
+      <div class="ams-card">
+        <div class="ams-card-title">负荷-速度散点 &amp; 回归线</div>
+        <div id="vbt-chart"><div class="empty-state">至少需要3个数据点才能拟合</div></div>
+      </div>
+
+      <div class="ams-card">
+        <div class="ams-card-title">回归结果与推算 e1RM</div>
+        <div id="vbt-stats"><div class="empty-state">—</div></div>
+      </div>
+
+      <div class="ams-card">
+        <div class="ams-card-title">数据点列表</div>
+        <div id="vbt-table"><div class="empty-state">—</div></div>
+      </div>
+    </div>
+
+    <!-- ===== TAB 4: 跳跃 & 退出条件 ===== -->
+    <div class="ams-panel" id="panel-jump">
+      <div class="ams-card">
+        <div class="ams-card-title">添加一次跳跃测试</div>
+        <div class="ams-row">
+          <div class="ams-field">
+            <label>日期</label>
+            <input type="date" id="jump-date">
+          </div>
+          <div class="ams-field" style="max-width:120px;">
+            <label>类型</label>
+            <select id="jump-type">
+              <option value="CMJ">CMJ</option>
+              <option value="SJ">SJ</option>
+            </select>
+          </div>
+          <div class="ams-field" style="max-width:120px;">
+            <label>高度 (cm)</label>
+            <input type="number" step="0.1" id="jump-val">
+          </div>
+          <button class="ams-btn" onclick="AMS.addJump()">添加</button>
+        </div>
+      </div>
+
+      <div class="ams-card">
+        <div class="ams-card-title">M1退出/M2基线参考值（只需设定一次）</div>
+        <div class="ams-row">
+          <div class="ams-field"><label>CMJ基线(新鲜, cm)</label><input type="number" step="0.1" id="ref-cmj"></div>
+          <div class="ams-field"><label>深蹲 e1RM基线(kg)</label><input type="number" id="ref-squat"></div>
+          <div class="ams-field"><label>硬拉 e1RM基线(kg)</label><input type="number" id="ref-deadlift"></div>
+          <div class="ams-field"><label>实力推 e1RM基线(kg)</label><input type="number" id="ref-press"></div>
+          <div class="ams-field"><label>高翻 e1RM基线(kg)</label><input type="number" id="ref-clean"></div>
+          <div class="ams-field"><label>引体基线(负重kg或次数)</label><input type="number" step="0.5" id="ref-pullup"></div>
+        </div>
+        <button class="ams-btn secondary" onclick="AMS.saveRefs()">保存基线</button>
+      </div>
+
+      <div class="ams-card">
+        <div class="ams-card-title">M2 退出条件自动核对</div>
+        <div id="exit-checklist"><div class="empty-state">填写基线后自动生成</div></div>
+      </div>
+
+      <div class="ams-card">
+        <div class="ams-card-title">跳跃记录</div>
+        <div id="jump-table"><div class="empty-state">—</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+
+  const LIFTS = ["深蹲","硬拉","实力推","引体","高翻"];
+  const CAT_COLORS = {"主项":"#4CC9B0","辅助":"#E0A93E","维持":"#7A93B0"};
+  const CAT_TARGET = {"主项":50,"辅助":25,"维持":25};
+
+  const DAY_KEYS = ["D1","D2","D3","D4","D5","D6","D7"];
+  const CATS = ["跳跃","加速","主项","辅助项","核心"];
+  const CAT_MAP = {"跳跃":"维持","加速":"维持","主项":"主项","辅助项":"辅助","核心":"辅助"};
+
+  function blankDay(label){
+    const cats={}; CATS.forEach(c=>cats[c]=[]);
+    return {label, cats};
+  }
+  function blankWeek(title){
+    const days={}; DAY_KEYS.forEach(d=>days[d]=blankDay(''));
+    return {title, days};
+  }
+
+  function defaultPlans(){
+    const w5 = blankWeek('M2 W5 引入周 RPE≤7.5');
+    w5.days.D1 = {label:'下肢力量和踝腱刚度', cats:{
+      跳跃:['单腿连续Pogo跳 - 2组×3次/每侧'], 加速:[],
+      主项:['高翻(全程) - 3组×3次 75-80%e1RM，速度衰减>10%该组即停下组减重','后蹲 - 4组×4次 75-78%e1RM，速度衰减>10%停'],
+      辅助项:['保加利亚蹲 - 3组×8次','罗马尼亚硬拉(轻) - 3组×8次'],
+      核心:['悬垂举腿 - 3组×12次','健腹轮 - 3组×10次']}};
+    w5.days.D2 = {label:'上肢垂直推拉和躯干稳定', cats:{
+      跳跃:[], 加速:[],
+      主项:['站姿实力推 - 3组×4次，速度衰减>10%停','引体向上(负重) - 3组×4次，速度衰减>10%停'],
+      辅助项:['哑铃上斜卧推 - 3组×8次','绳索面拉 - 3组×12次','三头下压/二头弯举(超级组) - 2组×10次','偏载农夫行走 - 3组×20米'],
+      核心:['健腹轮 - 3组×10次']}};
+    w5.days.D3 = {label:'恢复', cats:{跳跃:['Zone2慢跑 - 1小时'],加速:[],主项:[],辅助项:[],核心:[]}};
+    w5.days.D4 = {label:'下肢后侧+离心/硬拉专项', cats:{
+      跳跃:['45cm跳深(慢触地) - 2组×3次'], 加速:[],
+      主项:['硬拉 - 4组×3次 75-78%e1RM，速度衰减>10%停'],
+      辅助项:['腿举 - 3组×8次','腿弯举 - 3组×8次'],
+      核心:['Pallof press或平板支撑 - 3组×30-45秒']}};
+    w5.days.D5 = {label:'上肢水平推拉(辅助/肌肥大日)', cats:{
+      跳跃:['负重纵跳(8kg) - 2组×3次'], 加速:[], 主项:[],
+      辅助项:['杠铃卧推 - 3组×8-10次','潘德雷划船 - 3组×10-12次','器械水平拉 - 3组×10-12次','器械水平推 - 3组×10-12次'],
+      核心:['悬垂举腿 - 3组×12次','健腹轮 - 3组×10次']}};
+    w5.days.D6 = {label:'恢复', cats:{跳跃:['Zone2慢跑 - 1小时'],加速:[],主项:[],辅助项:[],核心:[]}};
+    w5.days.D7 = {label:'休息', cats:{跳跃:[],加速:[],主项:[],辅助项:[],核心:[]}};
+
+    const w6 = blankWeek('M2 W6 递增周 RPE≤8');
+    w6.days.D1 = {label:'下肢力量和踝腱刚度', cats:{
+      跳跃:['单腿连续Pogo跳 - 2组×3次/每侧'], 加速:[],
+      主项:['高翻(全程) - 3组×3次 78-85%e1RM，速度衰减>10%该组即停下组减重','后蹲 - 4组×4次 78-85%e1RM，速度衰减>10%停'],
+      辅助项:['罗马尼亚硬拉 - 2组×8次','保加利亚蹲 - 2组×8次'],
+      核心:['悬垂举腿 - 3组×12次','健腹轮 - 3组×10次']}};
+    w6.days.D2 = {label:'上肢垂直推拉和躯干稳定', cats:{
+      跳跃:[], 加速:[],
+      主项:['站姿实力推 - 3组×4次，速度衰减<10%','引体向上 - 3组×4次'],
+      辅助项:['哑铃上斜卧推 - 2组×8次','绳索面拉 - 2组×12次','三头下压/二头弯举(超级组) - 2组×10次','偏载农夫行走 - 3组×20米'],
+      核心:['健腹轮 - 3组×10次']}};
+    w6.days.D3 = {label:'恢复', cats:{跳跃:['Zone2慢跑 - 1小时'],加速:[],主项:[],辅助项:[],核心:[]}};
+    w6.days.D4 = {label:'下肢后侧+离心', cats:{
+      跳跃:['45cm跳深(慢触地) - 2组×3次'], 加速:[],
+      主项:['硬拉 - 4组×3次 78-85%e1RM，速度衰减>10%停'],
+      辅助项:['腿举 - 2组×8次','腿弯举 - 2组×8次'],
+      核心:['平板支撑 - 3组×1分钟','P-PRESS - 3组×15次']}};
+    w6.days.D5 = {label:'上肢水平推拉(辅助/肌肥大日)', cats:{
+      跳跃:['负重纵跳(8kg) - 2组×3次'], 加速:[], 主项:[],
+      辅助项:['杠铃卧推 - 3组×8次','潘德雷划船 - 3组×8次','器械水平拉 - 2组×8次','器械水平推 - 2组×8次'],
+      核心:['悬垂举腿 - 3组×12次','健腹轮 - 3组×10次']}};
+    w6.days.D6 = {label:'恢复', cats:{跳跃:['Zone2慢跑 - 1小时'],加速:[],主项:[],辅助项:[],核心:[]}};
+    w6.days.D7 = {label:'休息', cats:{跳跃:[],加速:[],主项:[],辅助项:[],核心:[]}};
+
+    return {"M2-W5":w5, "M2-W6":w6};
+  }
+
+  let state = {
+    logs: [],
+    vbt: {},        // lift -> {points:[{date,load,vel,note}], mvt:number}
+    jumps: [],       // {date,type,val}
+    refs: {},        // cmj, squat, deadlift, press, clean, pullup
+    plans: {},       // weekKey -> {title, days:{D1..D7:{label, cats:{跳跃,加速,主项,辅助项,核心}}}}
+    planChecks: {},  // weekKey -> {D1: {主项: [[false,false], [false,false,false], ...]}}
+    curWeekKey: null,
+    curDayKey: 'D1',
+    trainMode: false
+  };
+
+  function safeGet(key){
+    try{
+      const r = localStorage.getItem(key);
+      return r ? JSON.parse(r) : null;
+    }catch(e){ return null; }
+  }
+  function safeSet(key, val){
+    try{ localStorage.setItem(key, JSON.stringify(val)); }
+    catch(e){ console.error('storage set failed', key, e); }
+  }
+
+  async function loadAll(){
+    state.logs = (await safeGet('ams-training-log')) || [];
+    state.vbt = (await safeGet('ams-vbt-profiles')) || {};
+    state.jumps = (await safeGet('ams-jump-log')) || [];
+    state.refs = (await safeGet('ams-baseline-refs')) || {};
+    LIFTS.forEach(l=>{ if(!state.vbt[l]) state.vbt[l] = {points:[], mvt:null}; });
+
+    let plans = safeGet('ams-plan-templates');
+    if(!plans){ plans = defaultPlans(); safeSet('ams-plan-templates', plans); }
+    state.plans = plans;
+    state.curWeekKey = Object.keys(state.plans)[0] || null;
+    state.planChecks = safeGet('ams-plan-checks') || {};
+  }
+
+  function fmt(n, d=1){ if(n===null||n===undefined||isNaN(n)) return '—'; return Number(n).toFixed(d); }
+
+  function parseSetCount(line){
+    var m = line.match(/(\d+)\s*组/);
+    return m ? parseInt(m[1]) : 0;
+  }
+
+  function getOrInitChecks(wk, dk, cat, nExercises){
+    if(!state.planChecks[wk]) state.planChecks[wk] = {};
+    if(!state.planChecks[wk][dk]) state.planChecks[wk][dk] = {};
+    if(!state.planChecks[wk][dk][cat]) state.planChecks[wk][dk][cat] = [];
+    var arr = state.planChecks[wk][dk][cat];
+    // pad or trim to match current exercise count
+    while(arr.length < nExercises) arr.push([]);
+    arr.length = nExercises;
+    // ensure each exercise has right number of set slots
+    var exercises = state.plans[wk].days[dk].cats[cat];
+    for(var i=0; i<arr.length; i++){
+      var nSets = parseSetCount(exercises[i]);
+      if(nSets === 0) nSets = 1; // cardio etc: single checkbox
+      while(arr[i].length < nSets) arr[i].push(false);
+      arr[i].length = nSets;
+    }
+    return arr;
+  }
+
+  function completedCount(arr){
+    var done = 0, total = 0;
+    arr.forEach(function(ex){
+      ex.forEach(function(s){ if(s) done++; total++; });
+    });
+    return {done:done, total:total};
+  }
+
+  // ---------- Init AMS namespace ----------
+  window.AMS = window.AMS || {};
+
+  // ---------- Tabs ----------
+  AMS.switchTab = function(tabName){
+    document.querySelectorAll('.ams-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.ams-panel').forEach(p=>p.classList.remove('active'));
+    var tab = document.querySelector('.ams-tab[data-tab="'+tabName+'"]');
+    if(tab) tab.classList.add('active');
+    var panel = document.getElementById('panel-'+tabName);
+    if(panel) panel.classList.add('active');
+  };
+
+  // ---------- Training Plan ----------
+
+  function renderPlanWeekSelect(){
+    const sel = document.getElementById('plan-week-select');
+    const keys = Object.keys(state.plans);
+    if(!state.curWeekKey || !keys.includes(state.curWeekKey)) state.curWeekKey = keys[0] || null;
+    sel.innerHTML = keys.map(k=>`<option value="${k}" ${k===state.curWeekKey?'selected':''}>${state.plans[k].title}</option>`).join('');
+    sel.onchange = ()=>{ state.curWeekKey = sel.value; state.curDayKey='D1'; AMS.renderPlanDay(); };
+  }
+
+  function renderPlanDayTabs(){
+    const wrap = document.getElementById('plan-day-tabs');
+    if(!state.curWeekKey){ wrap.innerHTML=''; return; }
+    const days = state.plans[state.curWeekKey].days;
+    wrap.innerHTML = DAY_KEYS.map(dk=>{
+      const active = dk===state.curDayKey;
+      return `<button class="ams-btn ${active?'':'secondary'}" style="padding:6px 12px;font-size:12px;" onclick="AMS.pickDay('${dk}')">${dk}${days[dk].label? '·'+days[dk].label.slice(0,4):''}</button>`;
+    }).join('');
+  }
+
+  AMS.pickDay = function(dk){ state.curDayKey = dk; AMS.renderPlanDay(); };
+
+  AMS.newWeek = async function(){
+    const title = prompt('新周期名称，如「M2 W7 最高刺激周」：');
+    if(!title) return;
+    const key = 'W-'+Date.now();
+    state.plans[key] = blankWeek(title);
+    state.curWeekKey = key; state.curDayKey='D1';
+    await safeSet('ams-plan-templates', state.plans);
+    AMS.renderPlanDay();
+  };
+
+  AMS.deleteWeek = async function(){
+    if(!state.curWeekKey) return;
+    if(!confirm('确认删除「'+state.plans[state.curWeekKey].title+'」这个周期模板？')) return;
+    delete state.plans[state.curWeekKey];
+    state.curWeekKey = Object.keys(state.plans)[0] || null;
+    await safeSet('ams-plan-templates', state.plans);
+    AMS.renderPlanDay();
+  };
+
+  AMS.savePlanDay = async function(){
+    if(!state.curWeekKey) return;
+    const day = state.plans[state.curWeekKey].days[state.curDayKey];
+    day.label = document.getElementById('plan-day-label').value.trim();
+    CATS.forEach(c=>{
+      const ta = document.getElementById('plan-cat-'+c);
+      day.cats[c] = ta.value.split('\n').map(s=>s.trim()).filter(Boolean);
+    });
+    safeSet('ams-plan-templates', state.plans);
+    renderPlanWeekSelect();
+    renderPlanDayTabs();
+    alert('已保存');
+  };
+
+  AMS.quickLogFromCat = function(cat){
+    if(!state.curWeekKey) return;
+    const day = state.plans[state.curWeekKey].days[state.curDayKey];
+    const items = day.cats[cat];
+    if(!items.length){ alert('这个分类当天没有内容'); return; }
+    document.getElementById('log-cat').value = CAT_MAP[cat];
+    document.getElementById('log-day').value = state.curWeekKey.replace('M2-','')+'-'+state.curDayKey;
+    document.getElementById('log-desc').value = items.map(s=>s.split(' - ')[0]).join('+');
+    // switch to log tab
+    document.querySelectorAll('.ams-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.ams-panel').forEach(p=>p.classList.remove('active'));
+    document.querySelector('.ams-tab[data-tab="log"]').classList.add('active');
+    document.getElementById('panel-log').classList.add('active');
+    document.getElementById('log-dur').focus();
+  };
+
+  AMS.toggleTrainMode = function(){
+    state.trainMode = !state.trainMode;
+    AMS.renderPlanDay();
+  };
+
+  AMS.checkSet = async function(wk, dk, cat, exIdx, setIdx){
+    var checks = getOrInitChecks(wk, dk, cat, state.plans[wk].days[dk].cats[cat].length);
+    checks[exIdx][setIdx] = !checks[exIdx][setIdx];
+    safeSet('ams-plan-checks', state.planChecks);
+    AMS.renderPlanDay();
+  };
+
+  AMS.resetChecks = async function(){
+    if(!state.curWeekKey) return;
+    if(!confirm('确认清除今天所有勾选状态？')) return;
+    if(state.planChecks[state.curWeekKey])
+      delete state.planChecks[state.curWeekKey][state.curDayKey];
+    safeSet('ams-plan-checks', state.planChecks);
+    AMS.renderPlanDay();
+  };
+
+  AMS.renderPlanDay = function(){
+    renderPlanWeekSelect();
+    renderPlanDayTabs();
+    const titleEl = document.getElementById('plan-day-title');
+    const bodyEl = document.getElementById('plan-day-body');
+    if(!state.curWeekKey){ titleEl.textContent='—'; bodyEl.innerHTML='<div class="empty-state">还没有任何周期模板，点"新建周期"创建</div>'; return; }
+    const day = state.plans[state.curWeekKey].days[state.curDayKey];
+    titleEl.textContent = state.plans[state.curWeekKey].title + ' / ' + state.curDayKey;
+
+    // ---- Training mode toggle ----
+    var toggleBtn = state.trainMode
+      ? '<span class="ams-btn" onclick="AMS.toggleTrainMode()">← 编辑计划</span>'
+      : '<span class="ams-btn" onclick="AMS.toggleTrainMode()">⚡ 开始训练</span>';
+    var resetBtn = state.trainMode
+      ? '<span class="ams-btn danger-outline" onclick="AMS.resetChecks()" style="margin-left:6px;">清除勾选</span>'
+      : '';
+
+    var html = '<div class="train-mode-toggle">'+toggleBtn+resetBtn+'</div>';
+
+    if(state.trainMode){
+      // ---- TRAINING MODE ----
+      html += '<div class="ams-row"><div class="ams-field"><label>本日标题</label><input type="text" id="plan-day-label" value="'+(day.label||'')+'" readonly style="opacity:.6;"></div></div>';
+
+      var grandTotal = 0, grandDone = 0;
+
+      CATS.forEach(function(c){
+        var exercises = day.cats[c];
+        if(!exercises.length) return;
+        var checks = getOrInitChecks(state.curWeekKey, state.curDayKey, c, exercises.length);
+        var cc = completedCount(checks);
+        grandTotal += cc.total; grandDone += cc.done;
+
+        html += '<div style="margin-top:12px;">';
+        html += '<div class="ams-row" style="align-items:center;margin-bottom:4px;">';
+        html += '<div style="flex:1;font-size:12px;color:var(--text-dim);font-family:var(--mono);">'+c+' <span class="tag '+(c==='主项'?'tag-main':(c==='跳跃'||c==='加速'?'tag-maint':'tag-assist'))+'">'+CAT_MAP[c]+'</span></div>';
+        html += '<span style="font-size:11px;color:var(--text-faint);">'+cc.done+'/'+cc.total+'</span>';
+        html += '</div>';
+
+        exercises.forEach(function(ex, exIdx){
+          var nSets = parseSetCount(ex);
+          var setsHtml = '';
+          if(nSets === 0){
+            // single checkbox for non-set items
+            var checked = checks[exIdx] && checks[exIdx][0];
+            setsHtml = '<button class="train-circle'+(checked?' checked':'')+'" onclick="AMS.checkSet(\''+state.curWeekKey+'\',\''+state.curDayKey+'\',\''+c+'\','+exIdx+',0)">'+(checked?'✓':'')+'</button>';
+          } else {
+            for(var s=0; s<nSets; s++){
+              var checked = checks[exIdx] && checks[exIdx][s];
+              setsHtml += '<button class="train-circle'+(checked?' checked':'')+'" onclick="AMS.checkSet(\''+state.curWeekKey+'\',\''+state.curDayKey+'\',\''+c+'\','+exIdx+','+s+')">'+(checked?'✓':'')+'</button>';
+            }
+          }
+          var allDone = checks[exIdx] && checks[exIdx].length > 0 && checks[exIdx].every(function(x){return x;});
+          html += '<div class="train-row'+(allDone?' done-all':'')+'">';
+          html += '<div class="train-exercise">'+ex.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>';
+          html += '<div class="train-sets">'+setsHtml+'</div>';
+          html += '</div>';
+        });
+        html += '</div>';
+      });
+
+      // summary bar
+      var pct = grandTotal > 0 ? Math.round(grandDone/grandTotal*100) : 0;
+      html += '<div style="margin-top:16px;background:var(--surface-2);border-radius:6px;padding:10px 14px;">';
+      html += '<div class="train-summary">今日进度：'+grandDone+'/'+grandTotal+' 组完成 ('+pct+'%)</div>';
+      html += '<div style="height:6px;background:var(--bg);border-radius:3px;overflow:hidden;">';
+      html += '<div style="height:100%;width:'+pct+'%;background:var(--accent);border-radius:3px;transition:width .3s;"></div>';
+      html += '</div></div>';
+
+    } else {
+      // ---- EDIT MODE (original) ----
+      html += '<div class="ams-row"><div class="ams-field"><label>本日标题</label><input type="text" id="plan-day-label" value="'+(day.label||'')+'"></div></div>';
+      CATS.forEach(function(c){
+        html += '<div style="margin-top:10px;">';
+        html += '<div class="ams-row" style="align-items:center;">';
+        html += '<div style="flex:1;font-size:12px;color:var(--text-dim);font-family:var(--mono);">'+c+' <span class="tag '+(c==='主项'?'tag-main':(c==='跳跃'||c==='加速'?'tag-maint':'tag-assist'))+'">'+CAT_MAP[c]+'</span></div>';
+        html += '<span class="ams-btn secondary" style="padding:4px 10px;font-size:11px;" onclick="AMS.quickLogFromCat(\''+c+'\')">填入训练记录</span>';
+        html += '</div>';
+        html += '<textarea id="plan-cat-'+c+'" rows="'+Math.max(2, day.cats[c].length)+'" style="width:100%;background:var(--surface-2);border:1px solid var(--line);color:var(--text);border-radius:5px;padding:8px;font-size:12.5px;font-family:var(--mono);" placeholder="一行一个动作，如：后蹲 - 4组×4次 78%e1RM">'+day.cats[c].join('\n')+'</textarea>';
+        html += '</div>';
+      });
+    }
+    bodyEl.innerHTML = html;
+  };
+
+  // ---------- Training Log ----------
+  window.AMS = window.AMS || {};
+
+  AMS.addLog = async function(){
+    const date = document.getElementById('log-date').value;
+    const day = document.getElementById('log-day').value.trim();
+    const cat = document.getElementById('log-cat').value;
+    const desc = document.getElementById('log-desc').value.trim();
+    const dur = parseFloat(document.getElementById('log-dur').value);
+    const rpe = parseFloat(document.getElementById('log-rpe').value);
+    const pain = parseFloat(document.getElementById('log-pain').value) || 0;
+    if(!date || !dur || !rpe){ alert('日期、时长、RPE为必填'); return; }
+    const load = +(dur*rpe).toFixed(1);
+    state.logs.push({id:Date.now(), date, day, cat, desc, dur, rpe, pain, load});
+    state.logs.sort((a,b)=> a.date.localeCompare(b.date));
+    await safeSet('ams-training-log', state.logs);
+    document.getElementById('log-desc').value='';
+    document.getElementById('log-dur').value='';
+    document.getElementById('log-rpe').value='';
+    document.getElementById('log-pain').value='';
+    renderLog();
+  };
+
+  AMS.deleteLog = async function(id){
+    state.logs = state.logs.filter(l=>l.id!==id);
+    await safeSet('ams-training-log', state.logs);
+    renderLog();
+  };
+
+  function tagHtml(cat){
+    const cls = cat==='主项'?'tag-main':(cat==='辅助'?'tag-assist':'tag-maint');
+    return `<span class="tag ${cls}">${cat}</span>`;
+  }
+
+  function renderLog(){
+    const wrap = document.getElementById('log-table-wrap');
+    if(state.logs.length===0){ wrap.innerHTML = '<div class="empty-state">还没有记录，从上面添加第一条</div>'; return; }
+    let rows = state.logs.slice().reverse().map(l=>`
+      <tr>
+        <td>${l.date}</td>
+        <td>${l.day||'—'}</td>
+        <td>${tagHtml(l.cat)}</td>
+        <td style="font-family:var(--sans);">${l.desc||'—'}</td>
+        <td>${l.dur}min × RPE${l.rpe}</td>
+        <td>${l.load}</td>
+        <td style="color:${l.pain>0?'var(--danger)':'var(--text-faint)'}">${l.pain}</td>
+        <td><span class="ams-btn danger-outline" onclick="AMS.deleteLog(${l.id})">删除</span></td>
+      </tr>`).join('');
+    wrap.innerHTML = `<table>
+      <tr><th>日期</th><th>标签</th><th>分类</th><th>内容</th><th>时长×RPE</th><th>负荷</th><th>疼痛</th><th></th></tr>
+      ${rows}
+    </table>`;
+  }
+
+  // ---------- Week Summary ----------
+  function mondayOf(dateStr){
+    const d = new Date(dateStr+'T00:00:00');
+    const day = d.getDay(); // 0 sun .. 6 sat
+    const diff = (day===0? -6 : 1) - day;
+    d.setDate(d.getDate()+diff);
+    return d;
+  }
+  function weekRange(dateStr){
+    const mon = mondayOf(dateStr);
+    const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+    const toStr = (d)=> d.toISOString().slice(0,10);
+    return [toStr(mon), toStr(sun)];
+  }
+
+  AMS.renderWeek = function(){
+    const pick = document.getElementById('week-pick').value;
+    if(!pick) return;
+    const [start,end] = weekRange(pick);
+    const weekLogs = state.logs.filter(l=> l.date>=start && l.date<=end);
+    const barsWrap = document.getElementById('week-bars');
+    const painWrap = document.getElementById('week-pain');
+
+    if(weekLogs.length===0){
+      barsWrap.innerHTML = `<div class="empty-state">${start} 至 ${end} 暂无记录</div>`;
+      painWrap.innerHTML = '<div class="empty-state">—</div>';
+      return;
+    }
+
+    const totals = {'主项':0,'辅助':0,'维持':0};
+    weekLogs.forEach(l=> totals[l.cat] = (totals[l.cat]||0)+l.load);
+    const grand = Object.values(totals).reduce((a,b)=>a+b,0) || 1;
+
+    let barsHtml = `<div style="font-size:12px;color:var(--text-faint);margin-bottom:10px;">周期：${start} ~ ${end}　|　总负荷 ${fmt(grand,0)}</div>`;
+    Object.keys(CAT_TARGET).forEach(cat=>{
+      const pct = (totals[cat]/grand*100);
+      const dev = pct - CAT_TARGET[cat];
+      const flagClass = Math.abs(dev) > 10 ? 'flag-warn' : 'flag-ok';
+      barsHtml += `
+        <div class="bar-wrap">
+          <div class="bar-label">${cat}</div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:${Math.min(pct,100)}%; background:${CAT_COLORS[cat]};"></div>
+            <div class="bar-target-line" style="left:${CAT_TARGET[cat]}%;"></div>
+          </div>
+          <div class="bar-value ${flagClass}">${fmt(pct,0)}% (目标${CAT_TARGET[cat]}%, ${dev>=0?'+':''}${fmt(dev,0)}pt)</div>
+        </div>`;
+    });
+    barsHtml += `<div class="note">竖线标记为目标比例位置。偏差超过±10个百分点建议下周主动调整该类别的组数/强度。</div>`;
+    barsWrap.innerHTML = barsHtml;
+
+    const maxPain = Math.max(...weekLogs.map(l=>l.pain||0));
+    const painDays = weekLogs.filter(l=>l.pain>0).map(l=>`${l.date}(VAS ${l.pain})`);
+    painWrap.innerHTML = `<div class="kpi-grid">
+      <div class="kpi-box"><div class="kpi-name">本周最高疼痛VAS</div><div class="kpi-num" style="color:${maxPain>0?'var(--danger)':'var(--accent)'}">${maxPain}</div></div>
+      <div class="kpi-box"><div class="kpi-name">出现疼痛的记录</div><div class="kpi-num" style="font-size:13px;">${painDays.length? painDays.join('、') : '无'}</div></div>
+    </div>`;
+  };
+
+  // ---------- VBT ----------
+  AMS.saveMVT = async function(){
+    const lift = document.getElementById('vbt-lift').value;
+    const mvt = parseFloat(document.getElementById('vbt-mvt').value);
+    state.vbt[lift].mvt = isNaN(mvt)? null : mvt;
+    await safeSet('ams-vbt-profiles', state.vbt);
+    renderVBT();
+  };
+
+  AMS.addVBT = async function(){
+    const lift = document.getElementById('vbt-lift').value;
+    const date = document.getElementById('vbt-date').value;
+    const load = parseFloat(document.getElementById('vbt-load').value);
+    const vel = parseFloat(document.getElementById('vbt-vel').value);
+    const note = document.getElementById('vbt-note').value.trim();
+    if(!date || isNaN(load) || isNaN(vel)){ alert('日期、负荷、速度为必填'); return; }
+    state.vbt[lift].points.push({date, load, vel, note});
+    state.vbt[lift].points.sort((a,b)=>a.load-b.load);
+    await safeSet('ams-vbt-profiles', state.vbt);
+    document.getElementById('vbt-load').value='';
+    document.getElementById('vbt-vel').value='';
+    document.getElementById('vbt-note').value='';
+    renderVBT();
+  };
+
+  AMS.deleteVBTPoint = async function(lift, idx){
+    state.vbt[lift].points.splice(idx,1);
+    await safeSet('ams-vbt-profiles', state.vbt);
+    renderVBT();
+  };
+
+  function linreg(points){
+    const n = points.length;
+    if(n<2) return null;
+    const sx = points.reduce((s,p)=>s+p.load,0);
+    const sy = points.reduce((s,p)=>s+p.vel,0);
+    const sxy = points.reduce((s,p)=>s+p.load*p.vel,0);
+    const sxx = points.reduce((s,p)=>s+p.load*p.load,0);
+    const m = (n*sxy - sx*sy) / (n*sxx - sx*sx);
+    const b = (sy - m*sx)/n;
+    // R^2
+    const meanY = sy/n;
+    const ssTot = points.reduce((s,p)=>s+Math.pow(p.vel-meanY,2),0);
+    const ssRes = points.reduce((s,p)=>{ const pred = m*p.load+b; return s+Math.pow(p.vel-pred,2); },0);
+    const r2 = ssTot===0? 1 : 1 - ssRes/ssTot;
+    return {m,b,r2};
+  }
+
+  function renderVBT(){
+    const lift = document.getElementById('vbt-lift').value;
+    const prof = state.vbt[lift] || {points:[], mvt:null};
+    document.getElementById('vbt-mvt').value = prof.mvt ?? '';
+
+    // table
+    const tableWrap = document.getElementById('vbt-table');
+    if(prof.points.length===0){
+      tableWrap.innerHTML = '<div class="empty-state">还没有数据点</div>';
+    } else {
+      let rows = prof.points.map((p,idx)=>`
+        <tr><td>${p.date}</td><td>${p.load} kg</td><td>${p.vel} m/s</td><td style="font-family:var(--sans);">${p.note||'—'}</td>
+        <td><span class="ams-btn danger-outline" onclick="AMS.deleteVBTPoint('${lift}',${idx})">删除</span></td></tr>`).join('');
+      tableWrap.innerHTML = `<table><tr><th>日期</th><th>负荷</th><th>速度</th><th>备注</th><th></th></tr>${rows}</table>`;
+    }
+
+    // chart
+    const chartWrap = document.getElementById('vbt-chart');
+    const statsWrap = document.getElementById('vbt-stats');
+    if(prof.points.length < 3){
+      chartWrap.innerHTML = '<div class="empty-state">至少需要3个数据点才能拟合回归线</div>';
+      statsWrap.innerHTML = '<div class="empty-state">—</div>';
+      return;
+    }
+    const reg = linreg(prof.points);
+    const loads = prof.points.map(p=>p.load);
+    const vels = prof.points.map(p=>p.vel);
+    const minL = Math.min(...loads)*0.9, maxL = Math.max(...loads)*1.1;
+    const minV = 0, maxV = Math.max(...vels)*1.2;
+
+    const W=560,H=260,PAD=40;
+    const sx = v => PAD + (v-minL)/(maxL-minL)*(W-2*PAD);
+    const sy = v => H-PAD - (v-minV)/(maxV-minV)*(H-2*PAD);
+
+    let dots = prof.points.map(p=>`<circle cx="${sx(p.load)}" cy="${sy(p.vel)}" r="4" fill="#4CC9B0"/>`).join('');
+    const lx1=minL, ly1=reg.m*minL+reg.b, lx2=maxL, ly2=reg.m*maxL+reg.b;
+    let regLine = `<line x1="${sx(lx1)}" y1="${sy(ly1)}" x2="${sx(lx2)}" y2="${sy(ly2)}" stroke="#E0A93E" stroke-width="1.5" stroke-dasharray="4,3"/>`;
+
+    let mvtLine = '';
+    if(prof.mvt){
+      mvtLine = `<line x1="${PAD}" y1="${sy(prof.mvt)}" x2="${W-PAD}" y2="${sy(prof.mvt)}" stroke="#5C6469" stroke-width="1" stroke-dasharray="2,3"/>
+      <text x="${W-PAD}" y="${sy(prof.mvt)-4}" text-anchor="end" font-size="10" fill="#5C6469">MVT ${prof.mvt}</text>`;
+    }
+
+    chartWrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px;">
+      <line x1="${PAD}" y1="${H-PAD}" x2="${W-PAD}" y2="${H-PAD}" stroke="#2A3136"/>
+      <line x1="${PAD}" y1="${PAD}" x2="${PAD}" y2="${H-PAD}" stroke="#2A3136"/>
+      <text x="${PAD}" y="${H-PAD+18}" font-size="10" fill="#8B959B">${fmt(minL,0)}kg</text>
+      <text x="${W-PAD}" y="${H-PAD+18}" text-anchor="end" font-size="10" fill="#8B959B">${fmt(maxL,0)}kg</text>
+      <text x="${PAD-6}" y="${H-PAD}" text-anchor="end" font-size="10" fill="#8B959B">0</text>
+      <text x="${PAD-6}" y="${PAD+4}" text-anchor="end" font-size="10" fill="#8B959B">${fmt(maxV,1)}m/s</text>
+      ${mvtLine}
+      ${regLine}
+      ${dots}
+    </svg>`;
+
+    let e1rmHtml = '<span class="flag-warn">未设定MVT，无法推算e1RM</span>';
+    if(prof.mvt){
+      const est1rm = (prof.mvt - reg.b) / reg.m;
+      e1rmHtml = `<span class="kpi-num" style="font-size:22px;">${fmt(est1rm,1)} kg</span>`;
+    }
+    statsWrap.innerHTML = `<div class="kpi-grid">
+      <div class="kpi-box"><div class="kpi-name">回归方程</div><div class="kpi-num" style="font-size:14px;">v = ${fmt(reg.m,4)}·load + ${fmt(reg.b,3)}</div></div>
+      <div class="kpi-box"><div class="kpi-name">拟合优度 R²</div><div class="kpi-num" style="color:${reg.r2>0.9?'var(--accent)':'var(--warn)'}">${fmt(reg.r2,3)}</div><div class="kpi-sub">${reg.r2<0.9? 'R²偏低，检查是否有异常点或速度测量误差':'拟合良好'}</div></div>
+      <div class="kpi-box"><div class="kpi-name">推算 e1RM</div>${e1rmHtml}</div>
+    </div>
+    <div class="note">e1RM是基于当前几个数据点的线性外推估计值，不是真实测出的1RM，仅用于制定训练强度参考，测试点越多、越接近e1RM区间，估计越准。</div>`;
+  }
+
+  // ---------- Jump & Exit ----------
+  AMS.addJump = async function(){
+    const date = document.getElementById('jump-date').value;
+    const type = document.getElementById('jump-type').value;
+    const val = parseFloat(document.getElementById('jump-val').value);
+    if(!date || isNaN(val)){ alert('日期和高度为必填'); return; }
+    state.jumps.push({id:Date.now(), date, type, val});
+    state.jumps.sort((a,b)=>a.date.localeCompare(b.date));
+    await safeSet('ams-jump-log', state.jumps);
+    document.getElementById('jump-val').value='';
+    renderJump();
+  };
+
+  AMS.deleteJump = async function(id){
+    state.jumps = state.jumps.filter(j=>j.id!==id);
+    await safeSet('ams-jump-log', state.jumps);
+    renderJump();
+  };
+
+  AMS.saveRefs = async function(){
+    state.refs = {
+      cmj: parseFloat(document.getElementById('ref-cmj').value) || null,
+      squat: parseFloat(document.getElementById('ref-squat').value) || null,
+      deadlift: parseFloat(document.getElementById('ref-deadlift').value) || null,
+      press: parseFloat(document.getElementById('ref-press').value) || null,
+      clean: parseFloat(document.getElementById('ref-clean').value) || null,
+      pullup: parseFloat(document.getElementById('ref-pullup').value) || null,
+    };
+    await safeSet('ams-baseline-refs', state.refs);
+    renderExit();
+  };
+
+  function latestE1RM(lift){
+    const prof = state.vbt[lift];
+    if(!prof || prof.points.length<3 || !prof.mvt) return null;
+    const reg = linreg(prof.points);
+    return (prof.mvt - reg.b)/reg.m;
+  }
+
+  function checklistRow(name, current, baseline, targetDesc, passFn){
+    let status = 'pill-pending', label='待数据';
+    if(current!==null && baseline!==null && !isNaN(current) && !isNaN(baseline)){
+      const pass = passFn(current, baseline);
+      status = pass? 'pill-pass':'pill-fail';
+      label = pass? '达标':'未达标';
+    }
+    const curTxt = (current!==null && !isNaN(current))? fmt(current,1) : '—';
+    const baseTxt = (baseline!==null && !isNaN(baseline))? fmt(baseline,1) : '未设基线';
+    return `<div class="checklist-item">
+      <div>${name}　<span style="color:var(--text-faint);font-size:12px;">当前 ${curTxt} / 基线 ${baseTxt}　(${targetDesc})</span></div>
+      <span class="status-pill ${status}">${label}</span>
+    </div>`;
+  }
+
+  function renderExit(){
+    const wrap = document.getElementById('exit-checklist');
+    const refs = state.refs;
+    const cmjLatest = state.jumps.filter(j=>j.type==='CMJ').slice(-1)[0];
+
+    const squatCur = latestE1RM('深蹲');
+    const deadCur = latestE1RM('硬拉');
+    const pressCur = latestE1RM('实力推');
+    const cleanCur = latestE1RM('高翻');
+
+    let html = '';
+    html += checklistRow('深蹲 e1RM ↑≥5%', squatCur, refs.squat, '目标≥基线×1.05', (c,b)=> c>=b*1.05);
+    html += checklistRow('硬拉 e1RM ↑≥5%', deadCur, refs.deadlift, '目标≥基线×1.05', (c,b)=> c>=b*1.05);
+    html += checklistRow('实力推 e1RM ↑≥5%', pressCur, refs.press, '目标≥基线×1.05', (c,b)=> c>=b*1.05);
+    html += checklistRow('高翻 e1RM ↑≥5%', cleanCur, refs.clean, '目标≥基线×1.05', (c,b)=> c>=b*1.05);
+    html += checklistRow('CMJ ≥ 基线×95%', cmjLatest? cmjLatest.val: null, refs.cmj, '目标≥基线×0.95', (c,b)=> c>=b*0.95);
+
+    const maxPain = state.logs.length? Math.max(...state.logs.map(l=>l.pain||0)) : 0;
+    html += `<div class="checklist-item">
+      <div>疼痛 = 0　<span style="color:var(--text-faint);font-size:12px;">训练记录中最高VAS：${maxPain}</span></div>
+      <span class="status-pill ${maxPain===0?'pill-pass':'pill-fail'}">${maxPain===0?'达标':'未达标'}</span>
+    </div>`;
+    html += `<div class="note">引体（负重/次数）不适合用e1RM线性外推判断，请自行对照基线人工核实是否有提升。e1RM均来自VBT基线页已设定MVT后的推算值，未设定MVT的动作会显示"待数据"。</div>`;
+
+    wrap.innerHTML = html;
+
+    // fill ref inputs if present
+    if(refs.cmj) document.getElementById('ref-cmj').value = refs.cmj;
+    if(refs.squat) document.getElementById('ref-squat').value = refs.squat;
+    if(refs.deadlift) document.getElementById('ref-deadlift').value = refs.deadlift;
+    if(refs.press) document.getElementById('ref-press').value = refs.press;
+    if(refs.clean) document.getElementById('ref-clean').value = refs.clean;
+    if(refs.pullup) document.getElementById('ref-pullup').value = refs.pullup;
+  }
+
+  function renderJump(){
+    const wrap = document.getElementById('jump-table');
+    if(state.jumps.length===0){ wrap.innerHTML = '<div class="empty-state">还没有记录</div>'; return; }
+    let rows = state.jumps.slice().reverse().map(j=>`
+      <tr><td>${j.date}</td><td>${j.type}</td><td>${j.val} cm</td>
+      <td><span class="ams-btn danger-outline" onclick="AMS.deleteJump(${j.id})">删除</span></td></tr>`).join('');
+    wrap.innerHTML = `<table><tr><th>日期</th><th>类型</th><th>高度</th><th></th></tr>${rows}</table>`;
+    renderExit();
+  }
+
+  AMS.renderVBT = renderVBT;
+
+  // ---------- init ----------
+  async function init(){
+    await loadAll();
+    const today = new Date().toISOString().slice(0,10);
+    document.getElementById('log-date').value = today;
+    document.getElementById('vbt-date').value = today;
+    document.getElementById('jump-date').value = today;
+    document.getElementById('week-pick').value = today;
+    renderLog();
+    AMS.renderWeek();
+    renderVBT();
+    renderJump();
+    renderExit();
+    AMS.renderPlanDay();
+  }
+  init();
+
+})();
+</script>
+</html>
